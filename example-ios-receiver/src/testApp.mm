@@ -11,7 +11,7 @@ void testApp::setup(){
 	//iPhoneSetOrientation(OFXIPHONE_ORIENTATION_LANDSCAPE_RIGHT);
 	
 	ofBackground(127,127,127);
-	subs.setup("127.0.0.1", 20000);
+	subs.setup("192.168.6.113", 20000);
 
 }
 
