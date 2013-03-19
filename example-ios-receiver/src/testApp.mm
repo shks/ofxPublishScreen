@@ -11,17 +11,24 @@ void testApp::setup(){
 	//iPhoneSetOrientation(OFXIPHONE_ORIENTATION_LANDSCAPE_RIGHT);
 	
 	ofBackground(127,127,127);
-	subs.setup("192.168.1.7", 20000);
+	subs.setup("127.0.0.1", 20000);
+
 }
 
 //--------------------------------------------------------------
 void testApp::update(){
 	subs.update();
+	image.setFromPixels(
+						subs.getPixelsRef().getPixels() ,
+						subs.getPixelsRef().getWidth(),
+						subs.getPixelsRef().getHeight(),
+						OF_IMAGE_COLOR);
 }
 
 //--------------------------------------------------------------
 void testApp::draw(){
-	subs.draw();
+	image.draw(0,0);
+	
 }
 
 //--------------------------------------------------------------
