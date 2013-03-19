@@ -3,7 +3,7 @@
 #include "ofMain.h"
 #include "ofxZmq.h"
 #include "ofxTurboJpeg.h"
-
+#include <list>
 namespace ofxPublishScreen {
 	
 	class Publisher
