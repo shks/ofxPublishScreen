@@ -26,6 +26,8 @@ public:
 protected:
 	
 	ofxZmqPublisher pub;
+    
+    //TODO this should be modifyed
 	queue<ofPixels, list<ofPixels> > frames;
 	ofImageFormat format;
 	ofxTurboJpeg jpeg;
@@ -59,6 +61,21 @@ protected:
 					compress_time_ms += (d - compress_time_ms) * 0.1;
 				}
 				
+                //added by shks
+                {
+                    ofBuffer json_data;
+
+                    ofxJSONElement _json;
+                    _json["test"] = "test data";
+                    json_data.set(_json.toStyledString());
+                    
+                    data.append("\nEMBEDDED_INFORMATION\n");
+                    data.append("\n");
+                    data.append(json_data);
+                    data.append("\n");
+                    
+                }
+                
 				pub.send(data, true);
 				
 				float t = ofGetElapsedTimef();
@@ -103,7 +120,7 @@ ofxPublishScreen::Publisher::~Publisher()
 	dispose();
 }
 
-void ofxPublishScreen::Publisher::publishScreen()
+void ofxPublishScreen::Publisher::publishScreen(ofxJSONElement json)
 {
 	int w = ofGetWidth();
 	int h = ofGetHeight();
@@ -112,21 +129,22 @@ void ofxPublishScreen::Publisher::publishScreen()
 	tex.allocate(w, h, GL_RGBA);
 	tex.loadScreenData(0, 0, w, h);
 
-	publishTexture(&tex);
+	publishTexture(&tex, json);
 
 	tex.clear();
 }
 
-void ofxPublishScreen::Publisher::publishPixels(const ofPixels &pix)
+void ofxPublishScreen::Publisher::publishPixels(const ofPixels &pix, ofxJSONElement json)
 {
+    //TODO define some strut for image and json data
 	thread->pushImage(pix);
 }
 
-void ofxPublishScreen::Publisher::publishTexture(ofTexture* inputTexture)
+void ofxPublishScreen::Publisher::publishTexture(ofTexture* inputTexture, ofxJSONElement json)
 {
 	ofPixels pix;
 	inputTexture->readToPixels(pix);
-	publishPixels(pix);
+	publishPixels(pix, json);
 }
 
 void ofxPublishScreen::Publisher::onExit(ofEventArgs&)
@@ -148,6 +166,8 @@ public:
 	ofxZmqSubscriber subs;
 	ofPixels pix;
 	ofxTurboJpeg jpeg;
+    ofxJSONElement receivedJson;
+    
 	
 	bool is_frame_new;
 	float last_subs_time;
@@ -171,6 +191,7 @@ public:
 				ofPixels temp;
 				if (jpeg.load(data, temp))
 				{
+                    //Image data process
 					if (lock())
 					{
 						pix = temp;
@@ -183,6 +204,36 @@ public:
 						subs_fps += (d - subs_fps) * 0.1;
 						last_subs_time = ofGetElapsedTimef();
 					}
+                    
+                    // added by shks - - - - - - - - - - - - - - - - -
+                    //Json data Process
+                    {
+                        string str_received;
+                        bool json_decodeMode = false;
+                        while (!data.isLastLine()) {
+                            
+                            string str = data.getNextLine();
+                            
+                            
+                            if(json_decodeMode)
+                            {
+                                str_received.append(str);
+                            }
+                            
+                            if( str == "EMBEDDED_INFORMATION" )
+                            {
+                                json_decodeMode = true;
+                            }
+                        }
+                        
+                        //receivedJson
+                        if (lock())
+                        {
+                            receivedJson = str_received;
+                            unlock();
+                        }
+                    }
+                    // added by shks - - - - - - - - - - - - - - - - -
 				}
 			}
 			
@@ -229,7 +280,8 @@ void ofxPublishScreen::Subscriber::update()
 		{
 			thread->is_frame_new = false;
 			pix = thread->pix;
-			
+			receivedJson = thread->receivedJson;        //Added by shks
+            
 			is_frame_new = true;
 		}
 		thread->unlock();

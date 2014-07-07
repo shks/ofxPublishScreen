@@ -3,6 +3,10 @@
 #include "ofMain.h"
 #include "ofxZmq.h"
 #include "ofxTurboJpeg.h"
+///added by shks;
+
+#include "ofxJSONElement.h"
+
 #include <list>
 namespace ofxPublishScreen {
 	
@@ -16,9 +20,10 @@ namespace ofxPublishScreen {
 		void setup(int port, ofImageFormat format_ = OF_IMAGE_FORMAT_BMP);
 		void dispose();
 		
-		void publishScreen();
-		void publishPixels(const ofPixels &pix);
-		void publishTexture(ofTexture* inputTexture);
+        ///added by shks;
+		void publishScreen(ofxJSONElement json);
+		void publishPixels(const ofPixels &pix, ofxJSONElement json);
+		void publishTexture(ofTexture* inputTexture, ofxJSONElement json);
 		
 		float getFps();
 		
@@ -44,11 +49,17 @@ namespace ofxPublishScreen {
 		bool isFrameNew() { return is_frame_new; }
 		const ofPixelsRef getPixelsRef() { return pix; }
 		
+        //Added by shks
+        ofxJSONElement getJson(){return receivedJson;}
+        
 		float getFps();
 		
 	protected:
 		
-		ofImage pix;
+        //Added by shks
+        ofxJSONElement receivedJson;
+		
+        ofImage pix;
 		bool is_frame_new;
 		
 		class Thread;
@@ -85,10 +96,10 @@ namespace ofxPublishScreen {
 			ofClear(bg.r * 255, bg.g * 255, bg.b * 255);
 		}
 		
-		void end()
+		void end(ofxJSONElement json)
 		{
 			fbo.end();
-			publishTexture(&fbo.getTextureReference());
+			publishTexture(&fbo.getTextureReference(), json);
 		}
 		
 		float getWidth() { return fbo.getWidth(); }
