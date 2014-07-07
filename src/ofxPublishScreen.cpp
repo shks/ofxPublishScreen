@@ -5,18 +5,33 @@
 class ofxPublishScreen::Publisher::Thread : public ofThread
 {
 public:
-
+    
+    //Define Image and json data as struct
+    class ofxPublishScreenData {
+    public:
+    
+        //ofxPublishScreenData(const ofPixels &_pix) : pix(_pix){;}
+        //const ofPixels &pix;
+        ofPixels pix;
+        ofxJSONElement json;
+    } ;
+    
+    
+    
 	Thread(string host, ofImageFormat format) : format(format), last_pubs_time(0), pubs_fps(0), compress_time_ms(0)
 	{
 		pub.setHighWaterMark(1);
 		pub.bind(host);
 	}
 
-	void pushImage(const ofPixels &pix)
+	void pushImage(const ofPixels &pix, const ofxJSONElement &json)
 	{
 		if (lock())
 		{
-			frames.push(pix);
+            ofxPublishScreenData data;
+            data.pix = pix;             //copy happen? //TODO
+            data.json = json;
+			frames.push(data);
 			unlock();
 		}
 	}
@@ -28,7 +43,9 @@ protected:
 	ofxZmqPublisher pub;
     
     //TODO this should be modifyed
-	queue<ofPixels, list<ofPixels> > frames;
+	//queue<ofPixels, list<ofPixels> > frames;
+    queue<ofxPublishScreenData, list<ofxPublishScreenData> > frames;
+    
 	ofImageFormat format;
 	ofxTurboJpeg jpeg;
 	
@@ -44,10 +61,12 @@ protected:
 			while (!frames.empty() && isThreadRunning())
 			{
 				ofPixels pix;
+                ofxJSONElement json;
 
 				if (lock())
 				{
-					pix = frames.front();
+					json = frames.front().json;
+					pix = frames.front().pix;
 					frames.pop();
 					unlock();
 				}
@@ -64,16 +83,13 @@ protected:
                 //added by shks
                 {
                     ofBuffer json_data;
-
-                    ofxJSONElement _json;
-                    _json["test"] = "test data";
-                    json_data.set(_json.toStyledString());
+                    json["test"] = "test data";
+                    json_data.set(json.toStyledString());
                     
                     data.append("\nEMBEDDED_INFORMATION\n");
                     data.append("\n");
                     data.append(json_data);
                     data.append("\n");
-                    
                 }
                 
 				pub.send(data, true);
@@ -137,7 +153,7 @@ void ofxPublishScreen::Publisher::publishScreen(ofxJSONElement json)
 void ofxPublishScreen::Publisher::publishPixels(const ofPixels &pix, ofxJSONElement json)
 {
     //TODO define some strut for image and json data
-	thread->pushImage(pix);
+	thread->pushImage(pix, json );
 }
 
 void ofxPublishScreen::Publisher::publishTexture(ofTexture* inputTexture, ofxJSONElement json)
@@ -213,7 +229,6 @@ public:
                         while (!data.isLastLine()) {
                             
                             string str = data.getNextLine();
-                            
                             
                             if(json_decodeMode)
                             {
