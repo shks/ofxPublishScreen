@@ -1,5 +1,7 @@
 #include "ofxPublishScreen.h"
 
+//#define DEFINE_DATATYPE 1
+
 #pragma mark - Publisher
 
 class ofxPublishScreen::Publisher::Thread : public ofThread
@@ -28,11 +30,24 @@ public:
 	{
 		if (lock())
 		{
+            
+            
+#ifndef DEFINE_DATATYPE
+			frames.push(pix);
+			unlock();
+#else
+
             ofxPublishScreenData data;
             data.pix = pix;             //copy happen? //TODO
             data.json = json;
 			frames.push(data);
 			unlock();
+
+#endif
+            
+            
+            
+
 		}
 	}
 
@@ -43,9 +58,12 @@ protected:
 	ofxZmqPublisher pub;
     
     //TODO this should be modifyed
-	//queue<ofPixels, list<ofPixels> > frames;
-    queue<ofxPublishScreenData, list<ofxPublishScreenData> > frames;
     
+#ifndef DEFINE_DATATYPE
+	queue<ofPixels, list<ofPixels> > frames;
+#else
+    queue<ofxPublishScreenData, list<ofxPublishScreenData> > frames;
+#endif
 	ofImageFormat format;
 	ofxTurboJpeg jpeg;
 	
@@ -65,8 +83,14 @@ protected:
 
 				if (lock())
 				{
-					json = frames.front().json;
+#ifndef DEFINE_DATATYPE
+					pix = frames.front();
+                    
+#else
+                    json = frames.front().json;
 					pix = frames.front().pix;
+#endif
+                    
 					frames.pop();
 					unlock();
 				}
@@ -135,6 +159,15 @@ ofxPublishScreen::Publisher::~Publisher()
 {
 	dispose();
 }
+
+void ofxPublishScreen::Publisher::publishScreen()
+{
+	ofxJSONElement json;
+    json["test"] = "test";
+    
+    publishScreen(json);
+}
+
 
 void ofxPublishScreen::Publisher::publishScreen(ofxJSONElement json)
 {

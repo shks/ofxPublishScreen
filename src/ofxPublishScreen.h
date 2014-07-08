@@ -21,7 +21,8 @@ namespace ofxPublishScreen {
 		void dispose();
 		
         ///added by shks;
-		void publishScreen(ofxJSONElement json);
+		void publishScreen();
+        void publishScreen(ofxJSONElement json);
 		void publishPixels(const ofPixels &pix, ofxJSONElement json);
 		void publishTexture(ofTexture* inputTexture, ofxJSONElement json);
 		
