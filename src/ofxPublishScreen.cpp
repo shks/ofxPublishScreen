@@ -1,6 +1,6 @@
 #include "ofxPublishScreen.h"
 
-//#define DEFINE_DATATYPE 1
+#define DEFINE_DATATYPE 1
 
 #pragma mark - Publisher
 
